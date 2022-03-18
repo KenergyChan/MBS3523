@@ -35,7 +35,7 @@ while True:
     if EVT == cv2.EVENT_LBUTTONUP:
         cv2.rectangle(img, start_point, PNT, (255, 0, 0), 3)
         imgBound = img[start_point[1]:PNT[1], start_point[0]:PNT[0]]
-        cv2.imshow('image_ROX', imgBound)
+        cv2.imshow('image_ROI', imgBound)
         LDown=1
 
     if EVT == cv2.EVENT_RBUTTONDOWN:
