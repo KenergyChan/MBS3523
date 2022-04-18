@@ -21,7 +21,7 @@ def draw_rectangle(event,x,y,flags,param):
         EVT = cv2.EVENT_RBUTTONDOWN
     if event == cv2.EVENT_RBUTTONUP:
         EVT = cv2.EVENT_RBUTTONUP
-        cv2.destroyWindow('image_ROX')
+        cv2.destroyWindow('image_ROI')
 
 while True:
     _, img=cam.read()
