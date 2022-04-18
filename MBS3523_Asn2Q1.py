@@ -39,7 +39,7 @@ while True:
         classIndex = np.argmax(prediction)
         # print(classIndex)
         probabilityValue = np.amax(prediction)
-        if probabilityValue < 0.6:
+        if probabilityValue < 0.5:
             cv2.rectangle(frame, (x, y), (x + w, y + h), (80, 255, 0), 2)
             cv2.rectangle(frame, (x, y - 40), (x + w, y), (80, 255, 0), -2)
             cv2.putText(frame, "Unknown Person", (x, y - 10), font, 0.75, (255, 255, 255), 1, cv2.LINE_AA)
