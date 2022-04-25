@@ -3,7 +3,6 @@ import serial
 import time
 import numpy as np
 
-faceCascade = cv2.CascadeClassifier('Resources/haarcascade_frontalface_default.xml')
 
 ser = serial.Serial('COM3',baudrate=115200,timeout=1)
 time.sleep(0.5)
@@ -24,8 +23,6 @@ cv2.createTrackbar('VH', 'MBS3523', 255, 255, NIL)
 
 while True:
     ret, img = cam.read()
-    #imgGray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    #faces = faceCascade.detectMultiScale(imgGray, 1.05, 3)
     imgHSV = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     hueLow = cv2.getTrackbarPos('HL', 'MBS3523')
     hueHigh = cv2.getTrackbarPos('HH', 'MBS3523')
