@@ -15,7 +15,9 @@ while True:
     me.takeoff()
     img = me.get_frame_read().frame
     img = cv2.resize(img, (360,240))
-
+    
+    me.move_up(height)
+    
     cv2.imshow("Image", img)
 
     name = './images/' + floor + '/' + 'Front' + '/' + str(count) + '.jpg'
