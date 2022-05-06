@@ -39,10 +39,11 @@ while True:
     count=0
     height += 100
     floor += height/300
-
-    if me.get_battery() < 20 | floor > 38:
-        me.land()
-        print("Final Height: " + height)
-        break
+    
+    if cv2.waitKey(1) :
+        if me.get_battery() < 20 | floor > 38 | 0xff == 27 :
+            me.land()
+            print("Final Height: " + height)
+            break
 
     cv2.waitKey(0.5)
