@@ -7,7 +7,7 @@ me.connect()
 print(me.get_battery())
 count=0
 floor=1
-height= type(float(0))
+height = type(int(input("Input the previous height: ")))
 
 me.streamon()
 
@@ -36,11 +36,13 @@ while True:
     print("Creating Images........." + name)
 
     me.move_up(100)
-    count = 0
+    count=0
     height += 100
     floor += height/300
 
     if me.get_battery() < 20 | floor > 38:
         me.land()
+        print("Final Height: " + height)
+        break
 
     cv2.waitKey(0.5)
