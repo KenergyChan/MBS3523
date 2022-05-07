@@ -1,0 +1,44 @@
+from djitellopy import tello
+import cv2
+import time
+
+count=0
+distance=0
+me = tello.Tello()
+me.connect()
+print(me.get_battery())
+me.streamon()
+me.takeoff()
+
+while distance < 3:
+    img = me.get_frame_read().frame
+    img = cv2.resize(img, (360,240))
+    cv2.imshow('tello',img)
+    cv2.imwrite(f'Resources/{count}.jpg', img)
+    count +=1
+    print(f'Create image: ./Resources/{count}.jpg')
+    me.send_rc_control(0, 0, -30, 0)
+    distance += 1
+    print('distance' + str(distance))
+    time.sleep(1)
+
+    if cv2.waitKey(1) & 0xff == ord('q'):
+        break
+
+while distance < 8:
+    img = me.get_frame_read().frame
+    img = cv2.resize(img, (360,240))
+    cv2.imshow('tello',img)
+    cv2.imwrite(f'Resources/{count}.jpg', img)
+    count +=1
+    print(f'Create image: ./Resources/{count}.jpg')
+    me.send_rc_control(0, 0, 30, 0)
+    distance += 1
+    print('distance' + str(distance))
+    time.sleep(1)
+
+    if cv2.waitKey(1) & 0xff == ord('q'):
+        break
+
+me.land()
+time.sleep(2)
