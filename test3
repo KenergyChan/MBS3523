@@ -59,7 +59,7 @@ while distance < 8:
         print('errorPan', errorPan)
         # print(type(errorPan))
         if abs(errorPan) > 20:
-            pos =  -errorPan / 30 / 360 * 20
+            pos =  errorPan / 30 / 360 * 20
             me.send_rc_control(pos, 0, 0, 0)
             print(type(pos))
         #if pos > 160:pos = 160;print("Out of range");
