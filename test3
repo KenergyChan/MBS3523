@@ -6,12 +6,12 @@ cv2.namedWindow('MBS3523')
 def NIL(x):
     pass
 
-cv2.createTrackbar('HL', 'MBS3523', 30, 255, NIL)
-cv2.createTrackbar('HH', 'MBS3523', 55, 255, NIL)
-cv2.createTrackbar('SL', 'MBS3523', 110, 255, NIL)
+cv2.createTrackbar('HL', 'MBS3523', 62, 255, NIL)
+cv2.createTrackbar('HH', 'MBS3523', 137, 255, NIL)
+cv2.createTrackbar('SL', 'MBS3523', 76, 255, NIL)
 cv2.createTrackbar('SH', 'MBS3523', 255, 255, NIL)
-cv2.createTrackbar('VL', 'MBS3523', 70, 255, NIL)
-cv2.createTrackbar('VH', 'MBS3523', 255, 255, NIL)
+cv2.createTrackbar('VL', 'MBS3523', 0, 255, NIL)
+cv2.createTrackbar('VH', 'MBS3523', 87, 255, NIL)
 
 count=0
 distance=0
