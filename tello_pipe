@@ -9,23 +9,24 @@ me.connect()
 print(me.get_battery())
 me.streamon()
 me.takeoff()
+time.sleep(2)
 
-while distance< 3:
+while distance< 2:
     img = me.get_frame_read().frame
     img = cv2.resize(img, (360,240))
-    me.move_down(20)
+    me.move_down(22)
     time.sleep(2)
     distance+=1
 
-while distance <6:
+while distance <5:
     img = me.get_frame_read().frame
     img = cv2.resize(img, (360,240))
-
-    me.move_up(10)
-    time.sleep(2)
     cv2.imwrite(f'Resources/{count}.jpg', img)
+    time.sleep(0.5)
     count += 1
-    print(f'Create image: ./Resources/{count}.jpg') 
+    print(f'Create image: ./Resources/{count}.jpg')
+    me.move_up(40)
+    time.sleep(2)
     distance += 1
     print('distance' + str(distance))
 
