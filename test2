@@ -13,7 +13,7 @@ me.takeoff()
 while distance< 3:
     img = me.get_frame_read().frame
     img = cv2.resize(img, (360,240))
-    me.send_rc_control(0, 0, -20, 0)
+    me.move_down(20)
     time.sleep(2)
     distance+=1
 
@@ -21,7 +21,7 @@ while distance <6:
     img = me.get_frame_read().frame
     img = cv2.resize(img, (360,240))
 
-    me.send_rc_control(0, 0, 20, 0)
+    me.move_up(10)
     time.sleep(2)
     cv2.imwrite(f'Resources/{count}.jpg', img)
     count += 1
