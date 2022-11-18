@@ -53,7 +53,7 @@ def configPhysicsEngine():
     p.configureDebugVisualizer(p.COV_ENABLE_TINY_RENDERER, 0)   
     
 def loadObj():
-    armStartPos = [0, 0, -3]
+    armStartPos = [0, 0, 1]
     armStartOrn = p.getQuaternionFromEuler([0, 0, math.pi / 2])
     p.loadURDF("plane.urdf", [0, 0, 0])
     carId = p.loadURDF("AGV6/urdf/AGV6.urdf", basePosition=[0, 0, 0])
@@ -85,9 +85,8 @@ def resetJointInitState(kukaId):
             positionGain=0.03,
             velocityGain=1,
         )"""
-    #jointPositions = [0.000, 0.959, 1.455, -0.231, 2.312, -1.091]
-    jointPositions = [0.000, 0.000, 0.000, 0.000, 0.000, 0.000]
-    for jointIndex in range(p.getNumJoints(kukaId)):
+    jointPositions = [0.000, 0.959, 1.455, -0.231, 2.312, -1.091]
+    for jointIndex in range(nJoints):
         p.resetJointState(kukaId, jointIndex, jointPositions[jointIndex])
         
 def resetJointNullSpace(kukaId):
@@ -118,7 +117,7 @@ def chassis_control_from_keyboard(huskyId):
                                 wheels[i],
                                 p.VELOCITY_CONTROL,
                                 targetVelocity=wheelVelocities[i],
-                                force=2500)
+                                force=2000)
 
     
 def get_left_front_wheel_state(huskyId):
