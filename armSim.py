@@ -5,6 +5,7 @@ import time
 from collections import namedtuple
 from attrdict import AttrDict
 
+
 def configMotor(tankId, param):
     
     p.setJointMotorControl2(
@@ -62,11 +63,11 @@ def menuControl(id, Gp):
         param.append(p.readUserDebugParameter(Gp[i]))
     
     configMotor(id, param)
-
         
 def initialPose1(tankId, nj):
-    jointPoses = p.calculateInverseKinematics(tankId, 5, [0, -1, 0.5], [0, 0, 0])
-    print("pos", jointPoses)
+    #jointPoses = p.calculateInverseKinematics(tankId, 5, [0, -1, 0.5], [0, 0, 0])
+    jointPoses = [0,0,0,math.pi/4,math.pi/2,0]
+    #print("pos", jointPoses)
     for i in range(nj):
         # enable motor to move
         p.setJointMotorControl2(
@@ -76,13 +77,14 @@ def initialPose1(tankId, nj):
             targetPosition=jointPoses[i],
             targetVelocity=0,
             force=500,
-            positionGain=0.03,
+            positionGain=0.09,
             velocityGain=1,
         )
         
-def moveTo1(tankId, nj, pos, orn):
-    jointPoses = p.calculateInverseKinematics(tankId, 5, pos, orn)
-    print("pos", jointPoses)
+def moveTo1(tankId, nj):
+    #jointPoses = p.calculateInverseKinematics(tankId, 5, pos, orn)
+    jointPoses = [0, 0, 0, math.pi / 4, math.pi / 2, 0]
+    #print("pos", jointPoses)
     for i in range(nj):
         # enable motor to move
         p.setJointMotorControl2(
@@ -92,11 +94,27 @@ def moveTo1(tankId, nj, pos, orn):
             targetPosition=jointPoses[i],
             targetVelocity=0,
             force=500,
-            positionGain=0.03,
+            positionGain=0.09,
             velocityGain=1,
         )
 
-    
+def moveTo2(tankId, nj):
+    #jointPoses = p.calculateInverseKinematics(tankId, 5, pos, orn)
+    jointPoses = [0, 0, 0, -math.pi / 4, math.pi / 2, 0]
+    #print("pos", jointPoses)
+    for i in range(nj):
+        # enable motor to move
+        p.setJointMotorControl2(
+            bodyIndex=tankId,
+            jointIndex=i,
+            controlMode=p.POSITION_CONTROL,
+            targetPosition=jointPoses[i],
+            targetVelocity=0,
+            force=500,
+            positionGain=0.09,
+            velocityGain=1,
+        )
+
 def menuP2PArm1(tankId, nj):
     x = input('x: ')
     y = input('y: ')
@@ -134,7 +152,7 @@ def grasp(tankId, nJoints):
         print("posSeq", posSeq[i])
         print("ornSeq", ornSeq[i])
         
-        worldPos, worldOrn = p.getLinkState(tankId, 5)[:2]
+        worldPos, worldOrn = p.getLinkState(tankId, 1)[:2]
         print(f"world Pos {worldPos} & world Orn {worldOrn}")
         print("\n\n=================================\n\n")
         time.sleep(1)
@@ -142,12 +160,13 @@ def grasp(tankId, nJoints):
 def initArmEnv():
     p.connect(p.GUI)
     p.setAdditionalSearchPath(pd.getDataPath())
-    
+    move_up = 1
+    move_down = 0
     # pre-build urdf
     planeId = p.loadURDF("plane.urdf")
     
-    p.setGravity(0, 0, -9.8)
-    p.setRealTimeSimulation(1)
+    p.setGravity(0, 0, 0)
+    p.setRealTimeSimulation(0)
     p.setPhysicsEngineParameter(enableConeFriction=0)
    
     armStartPos = [0, 0 ,0]
@@ -194,21 +213,32 @@ def initArmEnv():
     # initialPose(tankId, nJoints)
     bp, bo = p.getBasePositionAndOrientation(tankId)
     print("Base Pos & Orn: ", bp, bo)
-    time.sleep(1)
-    
     initialPose1(tankId, nJoints)
-    
+    time.sleep(0.1)
     while True:
         # menu control from user input
-        #p.stepSimulation()
-        #moveTo1(tankId,0,[250,50,50],[0,50,0] )
+        p.stepSimulation()
+        print("baby: ", p.getJointState(tankId, 3)[0],p.getJointState(tankId, 4)[0])
+        if move_up==1:
+            moveTo1(tankId, 6)
+            time.sleep(0.0003)
+        elif move_down==1:
+            moveTo2(tankId, 6)
+            time.sleep(0.0003)
+        if p.getJointState(tankId,3)[0] > 0.78:
+            move_up = 0
+            move_down = 1
+        if p.getJointState(tankId, 3)[0] < -0.78:
+            move_up = 1
+            move_down = 0
+
         #p.applyExternalTorque(tankId, 2, torqueObj=[0.,5e-4,0.], flags=p.LINK_FRAME, physicsClientId=PYB_CLIENT) # INCORRECT ?
         #paramList = [0,0,0,0,0,5]
-        menuControl(tankId, paramList)
+        #menuControl(tankId, paramList)
 
         # p.getCameraImage(480, 320)
         #menuP2PArm1(tankId, nJoints)
-        #grasp(tankId, 6)
+            #grasp(tankId, 6)
         #time.sleep(1)
         #routine(tankId, 2)
 
