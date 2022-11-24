@@ -3,23 +3,7 @@ import pybullet_data as pd
 import time
 import math
 
-#lower limits for null space
-ll = [-.967, -2, -2.96, 0.19, -2.96, -2.09, -3.05]
-#upper limits for null space
-ul = [.967, 2, 2.96, 2.29, 2.96, 2.09, 3.05]
-#joint ranges for null space
-jr = [5.8, 4, 5.8, 4, 5.8, 4, 6]
-#restposes for null space
-rp = [0, 0, 0, 0.5 * math.pi, 0, -math.pi * 0.5 * 0.66, 0]
-#joint damping coefficents
-jd = [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
-
 wheels = [1, 2, 3, 4]
-# (2, b'front_left_wheel', 0, 7, 6, 1, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, b'front_left_wheel_link')
-# (3, b'front_right_wheel', 0, 8, 7, 1, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, b'front_right_wheel_link')
-# (4, b'rear_left_wheel', 0, 9, 8, 1, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, b'rear_left_wheel_link')
-# (5, b'rear_right_wheel', 0, 10, 9, 1, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, b'rear_right_wheel_link')
-
 wheelVelocities = [0, 0, 0, 0]
 wheelDeltasTurn = [0.5, -0.5, 0.5, -0.5]
 wheelDeltasFwd = [0.3, 0.3, 0.3, 0.3]
@@ -29,6 +13,7 @@ baseorn = [0, 0, 0, 1]
 baspos = [0,0,0]
 
 nJoints = 6
+nj_exceptBase = [1,2,3,4,5]
 kukaEndEffectorIndex = 6
 
 ikSolver = 0
@@ -48,31 +33,25 @@ def configPhysicsEngine():
     p.setPhysicsEngineParameter(enableConeFriction=0)
     p.setAdditionalSearchPath(pd.getDataPath())
     p.setGravity(0, 0, -9.81)
-    p.setRealTimeSimulation(1)
+    p.setRealTimeSimulation(0)
     p.configureDebugVisualizer(p.COV_ENABLE_TINY_RENDERER, 0)   
     
 def loadObj():
-    armStartPos = [0, 0, 0]
-    armStartOrn = p.getQuaternionFromEuler([0, 0, math.pi / 2])
-    p.loadURDF("plane.urdf", [0, 0, 0])
+    #armStartPos = [0, 0, 1]
+    #armStartOrn = p.getQuaternionFromEuler([0, 0, math.pi])
+    p.loadURDF("plane.urdf", [0, 0, -0.5])
     carId = p.loadURDF("AGV6/urdf/AGV6.urdf", basePosition=[0, 0, 0])
-    kukaId = p.loadURDF("arm/urdf/arm.urdf", armStartPos, armStartOrn)
-    cubeArr = []
-    cubeArr2 = []
-    """for i in range(10):
-        cubeId = p.loadURDF('cube.urdf', basePosition=[1.7, -i, 1])
-        cubeArr.append(cubeId)
-    for i in range(10):
-        cubeId = p.loadURDF('cube.urdf', basePosition=[1.7, -i, 2])
-        cubeArr2.append(cubeId)"""
+    kukaId = p.loadURDF("arm/urdf/arm.urdf",basePosition=[0, 0, 0], baseOrientation=p.getQuaternionFromEuler([0, 0, -math.pi]))
+
+    paramList = set_joint_param()
+    bp, bo = p.getBasePositionAndOrientation(kukaId)
     return carId, kukaId
 
 
 def resetJointInitState(kukaId):
-    jointPoses = p.calculateInverseKinematics(kukaId, 5, [0, -1, 0.5], [0, 0, 0])
-    print("pos", jointPoses)
+    jointPoses = [0, 0, 0, 0, math.pi / 2, 0]
     for i in range(6):
-     # enable motor to move
+        # enable motor to move
         p.setJointMotorControl2(
             bodyIndex=kukaId,
             jointIndex=i,
@@ -80,17 +59,33 @@ def resetJointInitState(kukaId):
             targetPosition=jointPoses[i],
             targetVelocity=0,
             force=500,
-            positionGain=0.03,
+            positionGain=0.09,
             velocityGain=1,
         )
-    """jointPositions = [0.000, 0.959, 1.455, -0.231, 2.312, -1.091, 1.852]
-       for jointIndex in range(p.getNumJoints(kukaId)):
-           p.resetJointState(kukaId, jointIndex, jointPositions[jointIndex])"""
-        
-def resetJointNullSpace(kukaId):
-    for i in range(6):
-        p.resetJointState(kukaId, i, rp[i])
-    
+
+
+def chassis_control_auto1(huskyId):
+
+    #wheelVelocities = [math.pi, math.pi, math.pi, math.pi]
+    wheelVelocities = [1, 1, 1, 1]
+    for i in range(len(wheels)):
+        p.setJointMotorControl2(huskyId,
+                                wheels[i],
+                                p.VELOCITY_CONTROL,
+                                targetVelocity=wheelVelocities[i],
+                                force=2000)
+
+def chassis_control_auto2(huskyId):
+
+    #wheelVelocities = [math.pi, math.pi, math.pi, math.pi]
+    wheelVelocities = [1, 1, 1, 1]
+    for i in range(len(wheels)):
+        p.setJointMotorControl2(huskyId,
+                                wheels[i],
+                                p.VELOCITY_CONTROL,
+                                targetVelocity=wheelVelocities[i],
+                                force=1100)
+
 
 def chassis_control_from_keyboard(huskyId):
     keys = p.getKeyboardEvents()
@@ -115,7 +110,7 @@ def chassis_control_from_keyboard(huskyId):
                                 wheels[i],
                                 p.VELOCITY_CONTROL,
                                 targetVelocity=wheelVelocities[i],
-                                force=2500)
+                                force=2000)
 
     
 def get_left_front_wheel_state(huskyId):
@@ -123,7 +118,7 @@ def get_left_front_wheel_state(huskyId):
     return worldPos, worldOrn
 
 def get_arm_endefftector_state_pos_and_orn(kukaId):
-    worldPos, worldOrn = p.getLinkState(kukaId, 6)[:2]
+    worldPos, worldOrn = p.getLinkState(kukaId, 5)[:2]
     return worldPos, worldOrn
 
 def get_chassis_num_joints(huskyId):
@@ -172,53 +167,39 @@ def configJointMotor(kukaID, param):
     p.setJointMotorControl2(kukaID, 5, p.POSITION_CONTROL, targetPosition=param[5])
 
 
+def moveTo1(tankId, nj):
+    #jointPoses = p.calculateInverseKinematics(tankId, 5, pos, orn)
+    jointPoses = [0, 0, 0, math.pi / 4, math.pi / 2, 0]
+    print("pos", jointPoses)
+    for i in range(nj):
+        # enable motor to move
+        p.setJointMotorControl2(
+            bodyIndex=tankId,
+            jointIndex=i,
+            controlMode=p.POSITION_CONTROL,
+            targetPosition=jointPoses[i],
+            targetVelocity=0,
+            force=500,
+            positionGain=0.09,
+            velocityGain=1,
+        )
 
-def accurateCalculateInverseKinematics(kukaId, endEffectorId, targetPos, threshold, maxIter):
-    closeEnough = False
-    iter = 0
-    dist2 = 1e30
-    while (not closeEnough and iter < maxIter):
-        jointPoses = p.calculateInverseKinematics(kukaId, kukaEndEffectorIndex, targetPos, ll, ul, jr, rp, jd)
-        for i in range(6):
-            p.resetJointState(kukaId, i, jointPoses[i])
-        ls = p.getLinkState(kukaId, kukaEndEffectorIndex)
-        newPos = ls[4]
-        diff = [targetPos[0] - newPos[0], targetPos[1] - newPos[1], targetPos[2] - newPos[2]]
-        dist2 = (diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2])
-        closeEnough = (dist2 < threshold)
-        iter = iter + 1
-    print ("Num iter: " + str(iter) + "threshold: " + str(dist2))
-    return jointPoses
-
-
-def moveTo(kukaId, pos, euler, flag):
-    orn = p.getQuaternionFromEuler(euler)
-    if flag == False:
-        jointPoses = p.calculateInverseKinematics(kukaId,
-                                              kukaEndEffectorIndex,
-                                              pos,
-                                              orn,
-                                              jointDamping=jd,
-                                              solver=ikSolver,
-                                              maxNumIterations=100,
-                                              residualThreshold=.01)
-    else:
-        jointPoses = accurateCalculateInverseKinematics(kukaId, 
-                                                        kukaEndEffectorIndex, 
-                                                        pos, 
-                                                        0.001, 
-                                                        100)
-    
-    for i in range(nJoints):
-        p.setJointMotorControl2(bodyIndex=kukaId,
-                                jointIndex=i,
-                                controlMode=p.POSITION_CONTROL,
-                                targetPosition=jointPoses[i],
-                                targetVelocity=0,
-                                force=1000,
-                                positionGain=0.04,
-                                velocityGain=1)
-    print("[INFO] move to succ")  
+def moveTo2(tankId, nj):
+    #jointPoses = p.calculateInverseKinematics(tankId, 5, pos, orn)
+    jointPoses = [0, 0, 0, -math.pi / 4, math.pi / 2, 0]
+    #print("pos", jointPoses)
+    for i in range(nj):
+        # enable motor to move
+        p.setJointMotorControl2(
+            bodyIndex=tankId,
+            jointIndex=i,
+            controlMode=p.POSITION_CONTROL,
+            targetPosition=jointPoses[i],
+            targetVelocity=0,
+            force=500,
+            positionGain=0.09,
+            velocityGain=1,
+        )
 
 
 def menu_p2p_control(kukaId, Gp):
@@ -231,30 +212,8 @@ def menu_p2p_control(kukaId, Gp):
     
     # print("Pos: ", pos)
     # print("Orn: ", ornAngle)
-    moveTo(kukaId, pos, ornAngle, False)
+    #moveTo(kukaId, pos, ornAngle, False)
 
-
-def muti_point_path_planning(kukaId, fromPos, toPos):
-    global hasPrevPose
-    global prevPose
-    global prevPose1
-    
-    for f, t in zip(fromPos, toPos):
-        moveTo(kukaId, f, t, False)
-        print("f:  ", f)
-        print("t: ", t)
-        for i in range(5):
-            ls = p.getLinkState(kukaId, kukaEndEffectorIndex)[:1]
-            print("index: ", i)
-            print("pos", ls)
-            if (hasPrevPose):
-                #p.addUserDebugLine(prevPose, f, [0, 1, 0], 1, trailDuration)
-                p.addUserDebugLine(prevPose1, ls[0], [0, 0, 1], 1, trailDuration)
-            prevPose = f
-            prevPose1 = ls[0]
-            hasPrevPose = 1
-            time.sleep(0.2)
-    time.sleep(0.5)
     
 def menu_joint_control(kukaId, Gp):
     param = []
@@ -265,57 +224,72 @@ def menu_joint_control(kukaId, Gp):
     """worldPos, worldOrn = p.getLinkState(kukaId, kukaEndEffectorIndex)[:2]
     print(f"world Pos {worldPos} & world Orn {worldOrn}")
     print("\n\n=================================\n\n")"""
-      
+
+
 def initEnv():
+    move_up = 1
+    move_down = 0
     connection()
     configPhysicsEngine()
-
-    
     carId, kukaId = loadObj()
+    car2Id = p.loadURDF("AGV6/urdf/AGV6.urdf", basePosition=[0, 3.5, 0])
+    watertankId = p.loadURDF("cube.urdf", basePosition=[0, 4.5, 0])
     resetJointInitState(kukaId)
-    
     print("[INFO] Number of Arm Joints: ", get_arm_num_joints(kukaId))
     print("[INFO] Number of Chassis Joints: ", get_chassis_num_joints(carId))
-    
     # stack arm on top of chassis 
-    cid = p.createConstraint(kukaId, -1, carId, -1, p.JOINT_FIXED, [0, 0, 0], [0, 0, 0], [0.5, 0.5, 1], [0, 0, 0, 1])
+    cid = p.createConstraint(kukaId, -1, carId, -1, jointType=p.JOINT_FIXED, jointAxis=[0, 0, 0],
+                             parentFramePosition=[0, 0, 0],
+                             childFramePosition=[0.2, 0.2, 0.25],
+                             parentFrameOrientation=[0, 0, 0],
+                             childFrameOrientation=p.getQuaternionFromEuler([0, 0, 0]))
+    cid2 = p.createConstraint(kukaId, -1, kukaId, 0, jointType=p.JOINT_PRISMATIC, jointAxis=[0, -1, 0],
+                              parentFramePosition=[0, 0, 0],
+                              childFramePosition=[0, 0, 0],
+                              parentFrameOrientation=[0, 0, 0],
+                              childFrameOrientation=p.getQuaternionFromEuler([0, 0,-math.pi]))
+    cid3 = p.createConstraint(kukaId, 0, kukaId, 1, jointType=p.JOINT_PRISMATIC, jointAxis=[0, -1, 0],
+                              parentFramePosition=[0, 0, 0],
+                              childFramePosition=[0, 0, 0],
+                              parentFrameOrientation=[0, 0, 0],
+                              childFrameOrientation=p.getQuaternionFromEuler([0, 0, 0]))
+    cid4 = p.createConstraint(kukaId, 1, kukaId, 2, jointType=p.JOINT_PRISMATIC, jointAxis=[0, -1, 0],
+                              parentFramePosition=[0, 0, 0],
+                              childFramePosition=[0, 0, 0],
+                              parentFrameOrientation=[0, 0, 0],
+                              childFrameOrientation=p.getQuaternionFromEuler([0, 0, 0]))
+    cid5 = p.createConstraint(watertankId, -1, car2Id, -1, jointType=p.JOINT_FIXED, jointAxis=[0, 0, 0],
+                             parentFramePosition=[0, 0, 0],
+                             childFramePosition=[0.0, 0.0, 0.8],
+                             parentFrameOrientation=[0, 0, 0],
+                             childFrameOrientation=p.getQuaternionFromEuler([0, 0, 0]))
+
     time.sleep(2)
     p2pL = set_p2p_param()
     jointL = set_joint_param()
-    """ curX = -0.33
-    curY = -0.77
-    print(curX, curY)
-    pos = [float(curX), float(curY), float(1.5)]
-    euler = [0, 0, 0]
-    time.sleep(2)
-    moveTo(kukaId, pos, euler) """
-    
     fromPos = [[-0.75, -0.75, 1.5], [1.5, 1.5, 1.5]]
     toPos = [[1.5, 1.5, 1.5], [1, 1, 1]]
-    
+
     while True:
-        chassis_control_from_keyboard(carId)
-        resetJointInitState(kukaId)
-        print("Baby!")
-        #time.sleep(0.5)
-        """ wwp, wwo = getLeftFrontWheelState(huskyId)
-        print("=======================================================")
-        print("state x: ", wwp[0])
-        print("state y: ", wwp[1])
-        print("state end effector: ", get_arm_endefftector_state(kukaId))
-        print("=======================================================")
-        if wwp[1] > -1.0:
-            pos = [float(wwp[0]), float(-1.0), float(1.5)]
-            euler = [2.24, 1.6, 1.8]
-            time.sleep(1)
-            moveTo(kukaId, pos, euler)  """
-        
-        #pos = [float(0.8), float(0.8), float(1.5)]    
-        #euler = [2.24, 1.6, 1.8]
-        #moveTo(kukaId, pos, euler)
-        #menu_p2p_control(kukaId, p2pL)
-        #muti_point_path_planning(kukaId, fromPos, toPos)
-        menu_joint_control(kukaId, jointL)
+        p.stepSimulation()
+        chassis_control_auto1(carId)
+        chassis_control_auto2(car2Id)
+        pos = [float(0.8), float(0.8), float(1.5)]
+        euler = [2.24, 1.6, 1.8]
+        if move_up == 1:
+            moveTo1(kukaId, 6)
+            time.sleep(0.0003)
+
+        elif move_down == 1:
+            moveTo2(kukaId, 6)
+            time.sleep(0.0003)
+
+        if p.getJointState(kukaId, 3)[0] > 0.71:
+            move_up = 0
+            move_down = 1
+        if p.getJointState(kukaId, 3)[0] < -0.71:
+            move_up = 1
+            move_down = 0
         
 if __name__=="__main__":
     initEnv()
