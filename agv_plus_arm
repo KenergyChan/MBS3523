@@ -77,7 +77,6 @@ def chassis_control_auto1(huskyId):
 
 def chassis_control_auto2(huskyId):
 
-    #wheelVelocities = [math.pi, math.pi, math.pi, math.pi]
     wheelVelocities = [1, 1, 1, 1]
     for i in range(len(wheels)):
         p.setJointMotorControl2(huskyId,
@@ -209,10 +208,6 @@ def menu_p2p_control(kukaId, Gp):
     
     pos = [paramList[0], paramList[1], paramList[2]]
     ornAngle = [paramList[3], paramList[4], paramList[5]]
-    
-    # print("Pos: ", pos)
-    # print("Orn: ", ornAngle)
-    #moveTo(kukaId, pos, ornAngle, False)
 
     
 def menu_joint_control(kukaId, Gp):
@@ -265,17 +260,12 @@ def initEnv():
                              childFrameOrientation=p.getQuaternionFromEuler([0, 0, 0]))
 
     time.sleep(2)
-    p2pL = set_p2p_param()
-    jointL = set_joint_param()
-    fromPos = [[-0.75, -0.75, 1.5], [1.5, 1.5, 1.5]]
-    toPos = [[1.5, 1.5, 1.5], [1, 1, 1]]
 
     while True:
         p.stepSimulation()
         chassis_control_auto1(carId)
         chassis_control_auto2(car2Id)
-        pos = [float(0.8), float(0.8), float(1.5)]
-        euler = [2.24, 1.6, 1.8]
+
         if move_up == 1:
             moveTo1(kukaId, 6)
             time.sleep(0.0003)
