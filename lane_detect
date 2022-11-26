@@ -1,9 +1,11 @@
 import cv2
 import numpy as np
 
+vid = cv2.VideoCapture('test2.mp4')
+
 def Canny(img):
     imggray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    imgblur = cv2.GaussianBlur(imggray,(5,5) ,0)
+    imgblur = cv2.GaussianBlur(imggray, (5,5), 0)
     imgcanny = cv2.Canny(imgblur, 50, 150)
     return imgcanny
 
@@ -11,7 +13,7 @@ def region_of_interest(abc):
     height = abc.shape[0]
     width = abc.shape[1]
     mask = np.zeros_like(abc)
-    polygons = np.array([[(200,height),(550,250),(1100,height)]])
+    polygons = np.array([[(200,height),(1000,250),(1100,height)]])
     cv2.fillPoly(mask,polygons,255)
     masked = cv2.bitwise_and(abc,mask)
     return masked
@@ -30,68 +32,81 @@ def display_lines(img,lines):
 
         return line_image
 
-def average_slope_intercept(img,lns):
+
+
+def average_slope_intercept(img,lines):
 
     left_fit = []
     right_fit = []
 
-    if lns is None:
-        return None
+    try:
+        for line in lines:
 
-    for ln in lns:
+            for x1,y1,x2,y2 in line:
 
-        for x1,y1,x2,y2 in ln:
+                fit = np.polyfit((x1,x2),(y1,y2),1)
+                slope = fit[0]
+                intercept = fit[1]
+                print(fit)
 
-            fit = np.polyfit((x1,x2),(y1,y2),1)
-            slope = fit[0]
-            intercept = fit[1]
-            print(fit)
+                if slope < 0:
+                    left_fit.append((slope, intercept))
 
-            if slope < 0:
-                left_fit.append((slope, intercept))
+                else:
+                    right_fit.append((slope, intercept))
 
-            else:
-                right_fit.append((slope, intercept))
+        left_fit_average = np.average(left_fit,axis=0)
+        right_fit_average = np.average(right_fit, axis=0)
 
-    left_fit_average = np.average(left_fit,axis=0)
-    right_fit_average = np.average(right_fit, axis=0)
+        print('left ', left_fit_average)
+        print('right ', right_fit_average)
+        left_line = create_points(img, left_fit_average)
+        right_line = create_points(img, right_fit_average)
 
-    print('left ', left_fit_average)
-    print('right ', right_fit_average)
-    left_line = create_points(img, left_fit_average)
-    right_line = create_points(img, right_fit_average)
+        return_lines = [[left_line,right_line]]
 
-    return_lines = [[left_line,right_line]]
+        return return_lines
 
-    return return_lines
+    except:
+        return previous_lines
 
 def create_points(img, line_param):
 
     slope, intercept = line_param
-    y1 = img.shape[0]
-    y2 = y1 * 2/3
-    x1 = (y1-intercept)/slope
-    x2 = (y2-intercept)/slope
-
+    y1 = int(img.shape[0])
+    y2 = int(y1 * 2/3)
+    x1 = int((y1-intercept)/slope)
+    x2 = int((y2-intercept)/slope)
     return np.array([x1,y1,x2,y2])
 
+while True:
 
-img = cv2.imread('lane_detect.jpg')
+    ret, img = vid.read()
 
-canny_img = Canny(img)
+    canny_img = Canny(img)
 
-cropped_canny = region_of_interest(canny_img)
+    cropped_canny = region_of_interest(canny_img)
 
-lines = cv2.HoughLinesP(cropped_canny, 2, np.pi/180, 100,np.array([]),minLineLength=40,maxLineGap=5)
+    lines = cv2.HoughLinesP(cropped_canny, 2, np.pi/180, 100, np.array([]),minLineLength=40,maxLineGap=5)
 
-line_image = display_lines(img,lines)
+    line_image = display_lines(img,lines)
 
-average_lines = average_slope_intercept(img,lines)
+    average_lines = average_slope_intercept(img,lines)
 
-average_line_image = display_lines(img,average_lines)
+    average_line_image = display_lines(img,average_lines)
+
+    combined_image = cv2.addWeighted(img,0.7,average_line_image,1.0,1)
+
+    cv2.imshow('Lines image',average_line_image)
+
+    cv2.imshow('Real image', combined_image)
+
+    print(img.shape)
+
+    previous_lines = average_lines
+
+    if cv2.waitKey(1) & 0xff == ord('q'):
+        break
 
 
-
-cv2.imshow('lane', cropped_canny)
-cv2.imshow('Hed_lane',average_line_image)
-cv2.waitKey(0)
+cv2.destroyAllWindows()
