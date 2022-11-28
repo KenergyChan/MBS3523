@@ -1,0 +1,23 @@
+import cv2
+print(cv2.__version__)
+import numpy as np
+
+img1= cv2.imread("AIR_leaflet.jpg", cv2.IMREAD_GRAYSCALE)
+img2= cv2.imread("leaflet2.jpg", cv2.IMREAD_GRAYSCALE)
+
+orb = cv2.ORB_create(nfeatures=1000)
+kp1, dsc1 = orb.detectAndCompute(img1, None)
+kp2, dsc2 = orb.detectAndCompute(img2, None)
+img1= cv2.drawKeypoints(img1,kp1,None)
+img2= cv2.drawKeypoints(img2,kp2,None)
+
+bf= cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+matches = bf.match(dsc1,dsc2)
+matches = sorted(matches, key=lambda x:x.distance)
+print(matches)
+matching_result = cv2.drawMatches(img1,kp1,img2,kp2,matches[:30],None,flags=2)
+
+cv2.imshow("img1", img1)
+cv2.imshow("img2", matching_result)
+
+cv2.waitKey(0)
