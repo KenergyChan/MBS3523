@@ -1,0 +1,127 @@
+import cv2
+import numpy as np
+
+video = cv2.VideoCapture("road_car_view.mp4")
+previous_lines = [[[0, 0, 0, 0]]]
+
+def Canny(img):
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    imggray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    imgblur = cv2.GaussianBlur(imggray, (5,5), 0)
+    imgcanny = cv2.Canny(imgblur, 50, 150)
+    return imgcanny
+
+def region_of_interest(abc):
+    height = abc.shape[0]
+    width = abc.shape[1]
+    mask = np.zeros_like(abc)
+    polygons = np.array([[(100,height),(550,550),(1400,height)]])
+    cv2.fillPoly(mask,polygons,255)
+    masked = cv2.bitwise_and(abc,mask)
+    return masked
+
+def display_lines(img,lines):
+    line_image = np.zeros_like(img)
+
+    if lines is not None:
+
+        for line in lines:
+
+            for x1, y1, x2, y2 in line:
+
+                cv2.line(line_image,(x1,y1),(x2,y2),(255,0,0),10)
+                print(line)
+
+        return line_image
+
+
+
+def average_slope_intercept(img,lines):
+
+    left_fit = []
+    right_fit = []
+    return_lines = []
+
+    try:
+        for line in lines:
+
+            for x1,y1,x2,y2 in line:
+
+                fit = np.polyfit((x1,x2),(y1,y2),1)
+                slope = fit[0]
+                intercept = fit[1]
+                print(fit)
+
+                if slope < 0:
+                    left_fit.append((slope, intercept))
+
+                elif slope > 0:
+                    right_fit.append((slope, intercept))
+
+        if left_fit is not None:
+
+            left_fit_average = np.average(left_fit,axis=0)
+            left_line = create_points(img, left_fit_average)
+            return_lines.append(left_line)
+
+        if right_fit is not None:
+
+            right_fit_average = np.average(right_fit, axis=0)
+            right_line = create_points(img, right_fit_average)
+            return_lines.append(right_line)
+
+        if left_fit is not None and right_fit is not None:
+            return previous_lines
+
+
+        print('left ', left_fit_average)
+        print('right ', right_fit_average)
+
+        return return_lines
+
+    except:
+        return previous_lines
+
+def create_points(img, line_param):
+
+    slope, intercept = line_param
+    y1 = int(img.shape[0])
+    y2 = int(y1 * 2/3)
+    x1 = int((y1-intercept)/slope)
+    x2 = int((y2-intercept)/slope)
+    return np.array([x1,y1,x2,y2])
+
+while True:
+    ret, frame = video.read()
+    frame_blur = cv2.GaussianBlur(frame,(5,5),0)
+    hsv = cv2.cvtColor(frame_blur, cv2.COLOR_BGR2HSV)
+    low_yellow = np.array([25, 0, 120])
+    high_yellow = np.array([45, 255, 255])
+    mask = cv2.inRange(hsv, low_yellow, high_yellow)
+
+    canny = cv2.Canny(mask, 50,150)
+
+    cropped_canny = region_of_interest(canny)
+
+    lines = cv2.HoughLinesP(cropped_canny, 2, np.pi/180, 100, np.array([]),minLineLength=1)
+
+    print("bab",lines,"<")
+
+    line_image = display_lines(frame, lines)
+
+    average_lines = average_slope_intercept(frame, lines)
+
+    average_line_image = display_lines(frame, average_lines)
+
+    """combined_image = cv2.addWeighted(frame, 0.7, average_line_image, 1.0, 1)"""
+
+
+    cv2.imshow("frame", frame)
+    cv2.imshow("Canny", cropped_canny)
+    cv2.imshow("alined", average_line_image)
+
+    previous_lines = average_lines
+    if cv2.waitKey(10) & 0xff == 27:
+        break
+
+cv2.destroyAllWindows()
