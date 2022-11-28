@@ -1,21 +1,16 @@
 import cv2
 import numpy as np
+import math
 
 video = cv2.VideoCapture("road_car_view.mp4")
 previous_lines = [[[0, 0, 0, 0]]]
-
-def Canny(img):
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    imggray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    imgblur = cv2.GaussianBlur(imggray, (5,5), 0)
-    imgcanny = cv2.Canny(imgblur, 50, 150)
-    return imgcanny
+zero_lines = [[[0, 0, 0, 0]]]
 
 def region_of_interest(abc):
     height = abc.shape[0]
     width = abc.shape[1]
     mask = np.zeros_like(abc)
-    polygons = np.array([[(100,height),(550,550),(1400,height)]])
+    polygons = np.array([[(100,height),(550,450),(1400,height)]])
     cv2.fillPoly(mask,polygons,255)
     masked = cv2.bitwise_and(abc,mask)
     return masked
@@ -32,22 +27,22 @@ def display_lines(img,lines):
                 cv2.line(line_image,(x1,y1),(x2,y2),(255,0,0),10)
                 print(line)
 
+
+
         return line_image
 
 
 
 def average_slope_intercept(img,lines):
-
     left_fit = []
     right_fit = []
-    return_lines = []
 
     try:
         for line in lines:
 
-            for x1,y1,x2,y2 in line:
+            for x1, y1, x2, y2 in line:
 
-                fit = np.polyfit((x1,x2),(y1,y2),1)
+                fit = np.polyfit((x1, x2), (y1, y2), 1)
                 slope = fit[0]
                 intercept = fit[1]
                 print(fit)
@@ -55,32 +50,26 @@ def average_slope_intercept(img,lines):
                 if slope < 0:
                     left_fit.append((slope, intercept))
 
-                elif slope > 0:
+                else:
                     right_fit.append((slope, intercept))
 
-        if left_fit is not None:
-
-            left_fit_average = np.average(left_fit,axis=0)
-            left_line = create_points(img, left_fit_average)
-            return_lines.append(left_line)
-
-        if right_fit is not None:
-
-            right_fit_average = np.average(right_fit, axis=0)
-            right_line = create_points(img, right_fit_average)
-            return_lines.append(right_line)
-
-        if left_fit is not None and right_fit is not None:
-            return previous_lines
-
+        left_fit_average = np.average(left_fit, axis=0)
+        right_fit_average = np.average(right_fit, axis=0)
 
         print('left ', left_fit_average)
         print('right ', right_fit_average)
+        left_line = create_points(img, left_fit_average)
+        right_line = create_points(img, right_fit_average)
+
+        return_lines = [[left_line, right_line]]
 
         return return_lines
 
     except:
         return previous_lines
+
+
+
 
 def create_points(img, line_param):
 
@@ -95,33 +84,48 @@ while True:
     ret, frame = video.read()
     frame_blur = cv2.GaussianBlur(frame,(5,5),0)
     hsv = cv2.cvtColor(frame_blur, cv2.COLOR_BGR2HSV)
-    low_yellow = np.array([25, 0, 120])
-    high_yellow = np.array([45, 255, 255])
-    mask = cv2.inRange(hsv, low_yellow, high_yellow)
+    low_yellow = np.array([18, 90, 118])
+    high_yellow = np.array([41, 255, 255])
+    low_white = np.array([0, 0, 160])
+    high_white = np.array([255, 30, 255])
+    mask_y = cv2.inRange(hsv, low_yellow, high_yellow)
+    mask_w = cv2.inRange(hsv, low_white, high_white)
 
-    canny = cv2.Canny(mask, 50,150)
+    canny1 = cv2.Canny(mask_y, 50,150)
+    canny2 = cv2.Canny(mask_w, 50, 150)
 
-    cropped_canny = region_of_interest(canny)
 
-    lines = cv2.HoughLinesP(cropped_canny, 2, np.pi/180, 100, np.array([]),minLineLength=1)
+    cropped_canny1 = region_of_interest(canny1)
+    cropped_canny2 = region_of_interest(canny2)
+
+    mix_cropped_canny = cv2.bitwise_or(cropped_canny1,cropped_canny2)
+
+    lines = cv2.HoughLinesP(mix_cropped_canny, 2, np.pi / 180, 100, np.array([]), minLineLength=20)
 
     print("bab",lines,"<")
 
+
     line_image = display_lines(frame, lines)
+
 
     average_lines = average_slope_intercept(frame, lines)
 
+
+    #print("bav", average_lines, "<")
+
     average_line_image = display_lines(frame, average_lines)
 
-    """combined_image = cv2.addWeighted(frame, 0.7, average_line_image, 1.0, 1)"""
 
+    combined_image = cv2.addWeighted(frame, 0.7, average_line_image, 1.0, 1)
 
     cv2.imshow("frame", frame)
-    cv2.imshow("Canny", cropped_canny)
-    cv2.imshow("alined", average_line_image)
+    cv2.imshow("avg",  mix_cropped_canny)
+    cv2.imshow("avg2",   average_line_image)
+    cv2.imshow("avg3", combined_image)
 
     previous_lines = average_lines
-    if cv2.waitKey(10) & 0xff == 27:
+
+    if cv2.waitKey(1) & 0xff == 27:
         break
 
 cv2.destroyAllWindows()
