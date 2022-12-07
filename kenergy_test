@@ -1,0 +1,45 @@
+import socket
+import time
+HOST = '192.168.58.2'
+PORT = 8080
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((HOST, PORT))
+print('connect')
+
+
+outdata = '/f/bIII52III201III151IIIMoveJ(-135.895,0.653,-120.867,-60.632,88.176,0.156,74.889,348.892,790.276,-90.927,0.115,132.279,0,0,100,100,50,0.000,0.000,0.000,0.000,0,0,0,0,0,0,0,0)III/b/f'
+print('send: ' + outdata)
+print(outdata.encode())
+s.send(outdata.encode())
+time.sleep(3)
+
+for i in range(3):
+    outdata = '/f/bIII52III201III156IIIMoveJ(-135.895,0.654,-120.867,-15.148,88.176,0.156,155.521,427.000,833.560,-45.450,1.391,132.897,0,0,100.0,80.0,100,0.000,0.000,0.000,0.000,0,0,0,0,0,0,0,0)III/b/f'
+    print('send: ' + outdata)
+    print(outdata.encode())
+    s.send(outdata.encode())
+    time.sleep(0.5)
+    outdata = '/f/bIII52III201III157IIIMoveJ(-135.895,0.652,-120.867,-75.395,88.176,0.156,56.890,331.405,759.094,-105.684,-0.349,132.320,0,0,100.0,80.0,100,0.000,0.000,0.000,0.000,0,0,0,0,0,0,0,0)III/b/f'
+    print('send: ' + outdata)
+    print(outdata.encode())
+    s.send(outdata.encode())
+    time.sleep(0.5)
+
+outdata = '/f/bIII52III201III151IIIMoveJ(-135.895,0.653,-120.867,-60.632,88.176,0.156,74.889,348.892,790.276,-90.927,0.115,132.279,0,0,100,100,50,0.000,0.000,0.000,0.000,0,0,0,0,0,0,0,0)III/b/f'
+
+print('send: ' + outdata)
+print(outdata.encode())
+s.send(outdata.encode())
+
+
+
+indata = s.recv(1024)
+
+if len(indata) == 0:  # connection closed
+    s.close()
+    print('server closed connection.')
+
+print('recv: ' + indata.decode())
+s.close()
+print('server closed connection.')
