@@ -173,9 +173,9 @@ def initEnv():
     print("[INFO] Number of Arm Joints: ", get_arm_num_joints(kukaId))
     print("[INFO] Number of Chassis Joints: ", get_chassis_num_joints(carId))
     # stack arm on top of chassis 
-    cid = p.createConstraint(kukaId, -1, carId, -1, jointType=p.JOINT_FIXED, jointAxis=[0, 0, 0],
-                             parentFramePosition=[0, 0, 0],
-                             childFramePosition=[0.2, 0.2, 0.25],
+    cid = p.createConstraint(carId, -1, kukaId, -1, jointType=p.JOINT_FIXED, jointAxis=[0, 0, 0],
+                             parentFramePosition=[0.5, 0, 0.25],
+                             childFramePosition=[0, 0, 0],
                              parentFrameOrientation=[0, 0, 0],
                              childFrameOrientation=p.getQuaternionFromEuler([0, 0, 0]))
     cid2 = p.createConstraint(kukaId, -1, kukaId, 0, jointType=p.JOINT_PRISMATIC, jointAxis=[0, -1, 0],
@@ -187,22 +187,22 @@ def initEnv():
                               parentFramePosition=[0, 0, 0],
                               childFramePosition=[0, 0, 0],
                               parentFrameOrientation=[0, 0, 0],
-                              childFrameOrientation=p.getQuaternionFromEuler([0, -math.pi/2, 0]))
+                              childFrameOrientation=p.getQuaternionFromEuler([0, math.pi/2, 0]))
     cid4 = p.createConstraint(kukaId, 1, kukaId, 2, jointType=p.JOINT_PRISMATIC, jointAxis=[0, -1, 0],
                               parentFramePosition=[0, 0, 0],
                               childFramePosition=[0, 0, 0],
                               parentFrameOrientation=[0, 0, 0],
-                              childFrameOrientation=p.getQuaternionFromEuler([0, 3*math.pi/4, 0]))
+                              childFrameOrientation=p.getQuaternionFromEuler([0, -5*math.pi/6, 0]))
     cid5 = p.createConstraint(kukaId, 2, kukaId, 3, jointType=p.JOINT_PRISMATIC, jointAxis=[0, 0, -1],
                               parentFramePosition=[0, 0, 0],
                               childFramePosition=[0, 0, 0],
                               parentFrameOrientation=[0, 0, 0],
-                              childFrameOrientation=p.getQuaternionFromEuler([0, -math.pi/3, 0]))
-    cid6 = p.createConstraint(kukaId, 3, kukaId, 4, jointType=p.JOINT_PRISMATIC, jointAxis=[0, 0, -1],
+                              childFrameOrientation=p.getQuaternionFromEuler([0, math.pi/3, 0]))
+    cid6 = p.createConstraint(kukaId, 3, kukaId, 4, jointType=p.JOINT_PRISMATIC, jointAxis=[0, -1, 0],
                               parentFramePosition=[0, 0, 0],
                               childFramePosition=[0, 0, 0],
                               parentFrameOrientation=[0, 0, 0],
-                              childFrameOrientation=p.getQuaternionFromEuler([0, math.pi/2,  0]))
+                              childFrameOrientation=p.getQuaternionFromEuler([0, 0,  0]))
     cid7 = p.createConstraint(kukaId, 4, kukaId, 5, jointType=p.JOINT_PRISMATIC, jointAxis=[0, -1, 0],
                               parentFramePosition=[0, 0, 0],
                               childFramePosition=[0, 0, 0],
@@ -211,9 +211,9 @@ def initEnv():
 
     cid8 = p.createConstraint(watertankId, -1, car2Id, -1, jointType=p.JOINT_FIXED, jointAxis=[0, 0, 0],
                              parentFramePosition=[0, 0, 0],
-                             childFramePosition=[0.0, 0.0, 0.8],
+                             childFramePosition=[0, 0, 0.8],
                              parentFrameOrientation=[0, 0, 0],
-                             childFrameOrientation=p.getQuaternionFromEuler([0, 0, 0]))
+                             childFrameOrientation=[0, 0, 0])
 
     time.sleep(2)
 
@@ -224,16 +224,16 @@ def initEnv():
 
         #print(p.getJointState(kukaId, 3))
         if move_up == 1:
-            p.changeConstraint(cid5,jointChildFrameOrientation=p.getQuaternionFromEuler([0, -math.pi*0.08, 0]))
+            p.changeConstraint(cid5,jointChildFrameOrientation=p.getQuaternionFromEuler([0, math.pi/2, 0]))
             time.sleep(0.03)
         elif move_down == 1:
-            p.changeConstraint(cid5,jointChildFrameOrientation=p.getQuaternionFromEuler([0, -math.pi*0.42, 0]))
+            p.changeConstraint(cid5,jointChildFrameOrientation=p.getQuaternionFromEuler([0, math.pi/4, 0]))
             time.sleep(0.03)
-
-        if p.getJointState(kukaId, 3)[0] > -0.30:
+        print(p.getJointState(kukaId, 3))
+        if p.getJointState(kukaId, 3)[0] > 1.50:
             move_up = 0
             move_down = 1
-        if p.getJointState(kukaId, 3)[0] < -1.24:
+        if p.getJointState(kukaId, 3)[0] < 0.87:
             move_up = 1
             move_down = 0
         
