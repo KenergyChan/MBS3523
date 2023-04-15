@@ -1,0 +1,96 @@
+#include <WiFi.h>
+#include <AsyncTCP.h>
+
+// Set up Wi-Fi access point
+const char* ssid = "MyWiFiAP";
+const char* password = "MyWiFiPassword";
+
+// Set up server port
+const int serverPort = 8888;
+
+// Set up serial parameters
+const int serialBaudRate = 115200;
+
+// Set up motor pin assignments
+const int motorPin1 = 2;
+const int motorPin2 = 4;
+const int motorPin3 = 13;
+const int motorPin4 = 15;
+
+// Create an instance of the AsyncServer class
+AsyncServer server(serverPort);
+
+// Create an instance of the AsyncClient class
+AsyncClient client;
+
+// Handler function for incoming connections
+void handleNewClient(AsyncClient* newClient) {
+  if (client.connected()) {
+    newClient->close();
+  } else {
+    client = *newClient;
+    Serial.println("Client connected");
+    client.onData([](const uint8_t* data, size_t len) {
+      if (len == 2) {
+        byte speed = data[0];
+        byte direction = data[1];
+        if (speed == 0) {
+          digitalWrite(motorPin1, LOW);
+          digitalWrite(motorPin2, LOW);
+        } else {
+          analogWrite(motorPin1, speed);
+          analogWrite(motorPin2, speed);
+          if (direction == 0) {
+            digitalWrite(motorPin3, LOW);
+            digitalWrite(motorPin4, HIGH);
+          } else {
+            digitalWrite(motorPin3, HIGH);
+            digitalWrite(motorPin4, LOW);
+          }
+        }
+      }
+    });
+    client.onDisconnect([](void* arg) {
+      digitalWrite(motorPin1, LOW);
+      digitalWrite(motorPin2, LOW);
+      digitalWrite(motorPin3, LOW);
+      digitalWrite(motorPin4, LOW);
+      Serial.println("Client disconnected");
+    });
+  }
+}
+
+void setup() {
+  // Set up serial port
+  Serial.begin(serialBaudRate);
+
+  // Set up Wi-Fi access point
+  WiFi.softAP(ssid, password);
+  IPAddress apIP = WiFi.softAPIP();
+  Serial.print("AP IP address: ");
+  Serial.println(apIP);
+
+  // Set up motor pins
+  pinMode(motorPin1, OUTPUT);
+  pinMode(motorPin2, OUTPUT);
+  pinMode(motorPin3, OUTPUT);
+  pinMode(motorPin4, OUTPUT);
+
+  // Start server and listen for incoming connections
+  server.begin();
+  server.onClient(handleNewClient);
+}
+
+void loop() {
+  // Check for incoming data on serial port and send over TCP
+  if (Serial.available()) {
+    if (client.connected()) {
+      client.write(Serial.read());
+    }
+  }
+
+  // Check for incoming data on TCP connection and send over serial port
+  if (client.connected() && client.available()) {
+    Serial.write(client.read());
+  }
+}
